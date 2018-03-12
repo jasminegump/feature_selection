@@ -7,6 +7,8 @@ import numpy as np
 import copy
 import sys
 
+# https://machinelearningmastery.com/tutorial-to-implement-k-nearest-neighbors-in-python-from-scratch/
+
 col_list = ['f1','f2','f3','f4','f5','f6','f7','f8','f9','f10']
 
 def read_file(text_file):
@@ -39,52 +41,51 @@ def get_neighbors(train_set, test):
 	return train_set[idx]
 
 
-def plot_save_fig(fig_num, plot_obj):
-	fig = plt.figure()
-	fig.show()
-	plot_obj.plot()
-	plt.savefig("fig"+str(fig_num)+".png")
-
 def calc_accuracy(num_pass, num_fail):
 	return num_pass/(num_pass + num_fail)
 
-text_file = 'CS205_SMALLtestdata__70.txt'
-input_list = read_file(text_file)
-df = list_to_pandas(input_list)
+def read_input(text_file):
+	input_list = read_file(text_file)
+	df = list_to_pandas(input_list)
+	return df
 
-# Just hard coding this for now
-
-train_set = []
-
-for col in range(len(col_list)):
-
-	print(col_list[col])
-
-	for i in range(len(df)):
-		temp = [df['c'][i],df[col_list[col]][i]]
-		train_set.append(temp)
-
-	count = 0
-	count_p = 0
-
-	for i in range(len(train_set)):
-		temp = copy.deepcopy(train_set)
-		test = train_set[i]
-		temp[i] = [1.0,sys.maxsize]
-
-		
-		neighbors = get_neighbors(temp,test)
-		#print(neighbors[1])
-
-		if test[0] == neighbors[0]:
-			#print("matched")
-			count_p +=1
-		else:
-			#print("failed")
-			count +=1
-	accuracy = calc_accuracy(count_p, count)
-	print(accuracy)
+def training(df):
 	train_set = []
+	for col in range(len(col_list)):
+		#print(col_list[col])	
+		num_pass = 0
+		num_fail = 0
+		
+
+		for i in range(len(df)):
+			temp = [df['c'][i],df[col_list[col]][i]]
+			train_set.append(temp)
+
+		for i in range(len(train_set)):
+			temp = copy.deepcopy(train_set)
+			test = train_set[i]
+			temp[i] = [1.0,sys.maxsize]
+
+			neighbors = get_neighbors(temp,test)
+
+			if test[0] == neighbors[0]:
+				num_pass +=1
+			else:
+				num_fail +=1
+		accuracy = calc_accuracy(num_pass, num_fail)
+		print(accuracy)
+		train_set = []
+
+def main():
+	df = read_input('CS205_SMALLtestdata__70.txt')
+	training(df)
+
+
+main()
+
+
+
+
 
 
 '''
