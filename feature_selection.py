@@ -2,14 +2,15 @@ import re
 import pandas as pd
 import math
 import matplotlib.pyplot as plt
-import operator 
 import numpy as np
 import copy
 import sys
+import random
 
 # https://machinelearningmastery.com/tutorial-to-implement-k-nearest-neighbors-in-python-from-scratch/
 
-col_list = ['f1','f2','f3','f4','f5','f6','f7','f8','f9','f10']
+#col_list = ['f1','f2','f3','f4','f5','f6','f7','f8','f9','f10']
+col_list = ['f1','f2','f3']
 
 def read_file(text_file):
 	data = []
@@ -22,7 +23,7 @@ def read_file(text_file):
 	return data
 
 def list_to_pandas(input_list):
-	df = pd.DataFrame(input_list, columns=['c','f1','f2','f3','f4','f5','f6','f7','f8','f9','f10'])
+	df = pd.DataFrame(input_list, columns=['c','f1','f2','f3'])
 	return df
 	#print(df.c)
 
@@ -37,9 +38,7 @@ def get_neighbors(train_set, test):
 		dist = euclidean_distance(x1,x2)
 		distance.append(dist)
 	idx = np.argmin(distance)
-
 	return train_set[idx]
-
 
 def calc_accuracy(num_pass, num_fail):
 	return num_pass/(num_pass + num_fail)
@@ -55,7 +54,6 @@ def training(df):
 		#print(col_list[col])	
 		num_pass = 0
 		num_fail = 0
-		
 
 		for i in range(len(df)):
 			temp = [df['c'][i],df[col_list[col]][i]]
@@ -76,9 +74,40 @@ def training(df):
 		print(accuracy)
 		train_set = []
 
+# Current divorcing of cross validation
+def leave_one_out_cross_validation(data, current_set, feature_to_add):
+	accuracy = random.uniform(0,1) 
+	return accuracy
+
+def forward_selection(data, num_features):
+
+	current_set_of_features = []
+
+	# loop through the features
+	for i in range(num_features):
+		print ("On level ",i, " of the search tree")
+		best_so_far_accuracy = 0
+		feature_to_add_at_this_level = []
+
+		for j in range(num_features):
+			if j not in current_set_of_features:
+				print ("Considering adding the ",j, " feature")
+				accuracy = leave_one_out_cross_validation(1,2,3) # RANDOM input for now cause it don't matter
+				print("accuracy", accuracy, "best_so_far_accuracy", best_so_far_accuracy)
+				if accuracy > best_so_far_accuracy:
+					print("accuracy > best_so_far_accuracy")
+					best_so_far_accuracy = accuracy
+					feature_to_add_at_this_level.append(j)
+		current_set_of_features += feature_to_add_at_this_level
+		print("On level", i," I added feature ", feature_to_add_at_this_level,"to current set")
+		print("current_set_of_features:", current_set_of_features)
+		print("%%%%%%%%%%%%%%%%%%%%%%%%%")
+
 def main():
-	df = read_input('CS205_SMALLtestdata__70.txt')
-	training(df)
+	df = read_input('super_small.txt')
+	#training(df)
+	#print(leave_one_out_cross_validation(1,2,3))
+	forward_selection(df, len(col_list))
 
 
 main()
