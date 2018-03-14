@@ -9,8 +9,8 @@ import random
 
 # https://machinelearningmastery.com/tutorial-to-implement-k-nearest-neighbors-in-python-from-scratch/
 
-#col_list = ['f1','f2','f3','f4','f5','f6','f7','f8','f9','f10']
-col_list = ['f1','f2','f3']
+col_names = ['c','f1','f2','f3','f4','f5','f6','f7','f8','f9','f10']
+#col_names = ['f1','f2','f3']
 
 def read_file(text_file):
 	data = []
@@ -23,18 +23,37 @@ def read_file(text_file):
 	return data
 
 def list_to_pandas(input_list):
+	#df = pd.DataFrame(input_list, columns=['c','f1','f2','f3','f4','f5','f6','f7','f8','f9','f10'])
 	df = pd.DataFrame(input_list, columns=['c','f1','f2','f3'])
 	return df
-	#print(df.c)
 
 def euclidean_distance(x1, x2):
+	total = 0
+	for i in range(len(x1)):
+		total += (x1[i]-x2[i])**2
+	return math.sqrt(total)
+	#return 1
+	#return math.sqrt((x1-x2)**2)
+
+def new_euclidean_distance(arg):
 	return math.sqrt((x1-x2)**2)
 
 def get_neighbors(train_set, test):
 	distance = []
+	print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+	print(test[0],test[1],test[2])
+	print(train_set[0][1],train_set[0][2])
+
+	# because first column is class
 	for i in range(len(train_set)):
-		x1 = train_set[i][1]
-		x2 = test[1]
+		x1 = []
+		x2 = []
+		for j in range(1,len(test)):
+			x1.append(test[j])
+		for k in range(1,len(test)):
+			x2.append(train_set[i][k])
+		print("x1",x1)
+		print("x2",x2)
 		dist = euclidean_distance(x1,x2)
 		distance.append(dist)
 	idx = np.argmin(distance)
@@ -48,8 +67,46 @@ def read_input(text_file):
 	df = list_to_pandas(input_list)
 	return df
 
-def training(df):
+def training(df, current_set,feature_to_add):
 	train_set = []
+	num_pass = 0
+	num_fail = 0
+
+	list_of_features = [0]+current_set+feature_to_add
+	col_list = [col_names[i] for i in list_of_features]
+	#print(col_list)
+
+	# first create training data set with current set and feature to add
+	#https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
+	for index,row in df.iterrows():
+		row_data = []
+		for i in col_list:
+			#print (row[i])
+			row_data.append(row[i]) 
+		train_set.append(row_data)
+	#print(train_set)
+
+	for i in range(len(train_set)):
+		temp = copy.deepcopy(train_set)
+		test = train_set[i]
+		#print(train_set[i])
+		temp[i] = [1.0]
+		for j in range(len(col_list)-1):
+			temp[i].append(sys.maxsize)
+
+		neighbors = get_neighbors(temp,test)
+
+		if test[0] == neighbors[0]:
+			num_pass +=1
+		else:
+			num_fail +=1
+	accuracy = calc_accuracy(num_pass, num_fail)
+	print(accuracy)
+	'''
+	train_set = []
+
+	
+	
 	for col in range(len(col_list)):
 		#print(col_list[col])	
 		num_pass = 0
@@ -73,9 +130,14 @@ def training(df):
 		accuracy = calc_accuracy(num_pass, num_fail)
 		print(accuracy)
 		train_set = []
+		'''
+	
 
 # Current divorcing of cross validation
 def leave_one_out_cross_validation(data, current_set, feature_to_add):
+	print("data:",data)
+	print("current_set",current_set)
+	print("feature_to_add",feature_to_add)
 	accuracy = random.uniform(0,1) 
 	return accuracy
 
@@ -88,11 +150,10 @@ def forward_selection(data, num_features):
 		print ("On level ",i, " of the search tree")
 		best_so_far_accuracy = 0
 		feature_to_add_at_this_level = []
-
 		for j in range(num_features):
 			if j not in current_set_of_features:
 				print ("Considering adding the ",j, " feature")
-				accuracy = leave_one_out_cross_validation(1,2,3) # RANDOM input for now cause it don't matter
+				accuracy = leave_one_out_cross_validation(data, current_set_of_features,j) # RANDOM input for now cause it don't matter
 				print("accuracy", accuracy, "best_so_far_accuracy", best_so_far_accuracy)
 				if accuracy > best_so_far_accuracy:
 					print("accuracy > best_so_far_accuracy")
@@ -105,9 +166,10 @@ def forward_selection(data, num_features):
 
 def main():
 	df = read_input('super_small.txt')
-	#training(df)
-	#print(leave_one_out_cross_validation(1,2,3))
-	forward_selection(df, len(col_list))
+	#df = read_input('CS205_SMALLtestdata__65.txt')
+	
+	training(df,[1],[2])
+	#forward_selection(df, len(col_list))
 
 
 main()
