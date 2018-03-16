@@ -12,7 +12,7 @@ import copy
 
 #col_names = ['c','f1','f2','f3','f4','f5','f6','f7','f8','f9','f10', 'f11','f12','f13','f14','f15','f16','f17','f18','f19','f20','f21','f22','f23','f24','f25','f26','f27','f28','f29','f30','f31','f32','f33','f34','f35','f36','f37','f38','f39','f40','f41','f42','f43','f44','f45','f46','f47','f48','f49','f50']
 col_names = ['c','f1','f2','f3','f4','f5','f6','f7','f8','f9','f10']
-
+#col_names = ['c','f1','f2','f3']
 
 def read_file(text_file):
 	data = []
@@ -35,7 +35,6 @@ def list_to_pandas(input_list):
 	return df
 
 # need to normalize between -10 and 10
-#def 
 def calc_accuracy(num_pass, num_fail):
 	return num_pass/(num_pass + num_fail)
 
@@ -44,14 +43,9 @@ def euclidean_distance(x1, x2):
 	for i in range(len(x1)):
 		total += (x1[i]-x2[i])**2
 	return math.sqrt(total)
-	#return 1
-	#return math.sqrt((x1-x2)**2)
 
 def get_neighbors(train_set, test):
 	distance = []
-	#print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-	#print(test[0],test[1],test[2])
-	#print(train_set[0][1],train_set[0][2])
 
 	# because first column is class
 	for i in range(len(train_set)):
@@ -79,14 +73,38 @@ def z_normalize_df(df):
 	#print(df)
 	return df
 
+def min_max_normalize_df(df):
+	for i in df:
+		if i is not 'c':
+			#print(df[i], df[i].mean(), df[i].std())
+			temp = (df[i] - df[i].min())/(df[i].max()-df[i].min())
+			df[i] = temp
+			#print(df[i].sum())
+	#print(df)
+	return df
+
+def scaling_normalize_df(df):
+	for i in df:
+		if i is not 'c':
+			#print(df[i], df[i].mean(), df[i].std())
+			temp = df[i]/100
+			df[i] = temp
+			#print(df[i].sum())
+	#print(df)
+	return df
+
 def training(df, current_set,feature_to_add):
 	train_set = []
 	num_pass = 0
 	num_fail = 0
 
-	list_of_features = [0]+current_set+[feature_to_add]
+	if feature_to_add == 0:
+		list_of_features = [0]+current_set
+	else:
+		list_of_features = [0]+current_set+[feature_to_add]
 	col_list = [col_names[i] for i in list_of_features]
-	#print(col_list)
+
+	print("training:",col_list)
 
 	# first create training data set with current set and feature to add
 	#https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
@@ -125,8 +143,6 @@ def leave_one_out_cross_validation(data, current_set, feature_to_add):
 	#accuracy = random.uniform(0,1) 
 	return accuracy
 
-
-
 def forward_selection(data, num_features):
 
 	current_set_of_features = []
@@ -159,45 +175,82 @@ def forward_selection(data, num_features):
 	print("FINISHED", best_feature, best_total_accuracy)
 
 
+def backwards_selection(data, num_features):
+	total_results = []
+	total_runs = 3
+	run_diff = 0.01
+	for l in range(0,total_runs):
+		current_set_of_features = []
+		best_feature = []
+		best_total_accuracy = 0 
+		removed_features = []
+		for k in range(1,num_features+1):
+			#print(k)
+			current_set_of_features.append(k)
+
+
+		# loop through the features
+		for i in range(1,num_features+1):
+			print ("On level ",i, " of the search tree")
+			print("current_set_of_features:", current_set_of_features, len(current_set_of_features))
+			best_so_far_accuracy = 0
+			#current_set_of_features = []
+			
+			#best_so_far_accuracy = 0
+			for j in range(1,num_features+1):
+				features_to_test = copy.deepcopy(current_set_of_features)
+				if j in current_set_of_features:
+					print ("Considering removing the ",j, " feature")
+					features_to_test.remove(j)
+					accuracy = leave_one_out_cross_validation(data, features_to_test,0) # RANDOM input for now cause it don't matter
+					print("accuracy", accuracy, "best_so_far_accuracy", best_so_far_accuracy)
+					if (accuracy >= best_so_far_accuracy) or (accuracy >= best_so_far_accuracy-(run_diff*l)):
+						print("accuracy < best_so_far_accuracy")
+						best_so_far_accuracy = accuracy
+						feature_to_remove = j
+						best_total_accuracy = best_so_far_accuracy
+					#feature_to_add_at_this_level.append(j)
+
+			print("before", current_set_of_features)
+			#if feature_to_remove in current_set_of_features:
+			#print("feature_to_add_at_this_level",feature_to_add_at_this_level)
+			current_set_of_features.remove(feature_to_remove)
+			#current_set_of_features = feature_to_add_at_this_level
+			print("removed", feature_to_remove)
+			print("after", current_set_of_features)
+
+			if (len(current_set_of_features) <= 3):
+				#print("!!!!!!")
+				best_feature = copy.deepcopy(current_set_of_features)
+				break
+				#best_total_accuracy = best_so_far_accuracy
+			#print("On level", i," I added feature ", feature_to_add_at_this_level,"to current set")
+			#print("current_set_of_features:", current_set_of_features)
+			print("accuracy",best_total_accuracy)
+			print("%%%%%%%%%%%%%%%%%%%%%%%%%")
+		print("FINISHED", best_feature, best_total_accuracy)
+		total_results.append(best_feature)
+	#print()	
+	print("FINISHED", total_results)
+
 def main():
 	#df = read_input('super_small.txt')
 	
 	df = read_input('CS205_SMALLtestdata__35.txt')
 	#df = read_input('CS205_BIGtestdata__2.txt')
-	
 
+	#df = scaling_normalize_df(df)
+	#df = min_max_normalize_df(df)
 	df = z_normalize_df(df)
 
-	#training(df,[6,9],3)
-	forward_selection(df, len(col_names)-1)
+	#training(df,[5,6,8],10)
+
+	#forward_selection(df, len(col_names)-1)
+	backwards_selection(df, len(col_names)-1)
 
 main()
-
-
-
-
 '''
 small 35 = 6,3,2
 large 2 = 1,3,24
-f1
-0.85
-f2
-0.79
-f3
-0.77
-f4
-0.76
-f5
-0.78
-f6
-0.72
-f7
-0.69
-f8
-0.84
-f9
-0.74
-f10
-0.74
 '''
 
