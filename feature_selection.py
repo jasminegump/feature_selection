@@ -6,11 +6,13 @@ import numpy as np
 import copy
 import sys
 import random
+import copy
 
 # https://machinelearningmastery.com/tutorial-to-implement-k-nearest-neighbors-in-python-from-scratch/
 
+#col_names = ['c','f1','f2','f3','f4','f5','f6','f7','f8','f9','f10', 'f11','f12','f13','f14','f15','f16','f17','f18','f19','f20','f21','f22','f23','f24','f25','f26','f27','f28','f29','f30','f31','f32','f33','f34','f35','f36','f37','f38','f39','f40','f41','f42','f43','f44','f45','f46','f47','f48','f49','f50']
 col_names = ['c','f1','f2','f3','f4','f5','f6','f7','f8','f9','f10']
-#col_names = ['f1','f2','f3']
+
 
 def read_file(text_file):
 	data = []
@@ -28,7 +30,7 @@ def read_input(text_file):
 	return df
 
 def list_to_pandas(input_list):
-	df = pd.DataFrame(input_list, columns=['c','f1','f2','f3','f4','f5','f6','f7','f8','f9','f10'])
+	df = pd.DataFrame(input_list, columns=col_names)
 	#df = pd.DataFrame(input_list, columns=['c','f1','f2','f3'])
 	return df
 
@@ -36,7 +38,6 @@ def list_to_pandas(input_list):
 #def 
 def calc_accuracy(num_pass, num_fail):
 	return num_pass/(num_pass + num_fail)
-
 
 def euclidean_distance(x1, x2):
 	total = 0
@@ -67,8 +68,6 @@ def get_neighbors(train_set, test):
 	idx = np.argmin(distance)
 	return train_set[idx]
 
-
-
 def z_normalize_df(df):
 	#https://stackoverflow.com/questions/24761998/pandas-compute-z-score-for-all-columns
 	for i in df:
@@ -79,7 +78,6 @@ def z_normalize_df(df):
 			#print(df[i].sum())
 	#print(df)
 	return df
-
 
 def training(df, current_set,feature_to_add):
 	train_set = []
@@ -109,7 +107,7 @@ def training(df, current_set,feature_to_add):
 			temp[i].append(sys.maxsize)
 
 		neighbors = get_neighbors(temp,test)
-		print(neighbors, test)
+		#print(neighbors, test)
 		if test[0] == neighbors[0]:
 			num_pass +=1
 		else:
@@ -132,7 +130,8 @@ def leave_one_out_cross_validation(data, current_set, feature_to_add):
 def forward_selection(data, num_features):
 
 	current_set_of_features = []
-
+	best_feature = []
+	best_total_accuracy = 0 
 	# loop through the features
 	for i in range(1,num_features+1):
 		print ("On level ",i, " of the search tree")
@@ -150,20 +149,27 @@ def forward_selection(data, num_features):
 						feature_to_add_at_this_level = []
 					feature_to_add_at_this_level.append(j)
 		current_set_of_features += feature_to_add_at_this_level
+		if (best_so_far_accuracy > best_total_accuracy) or (len(current_set_of_features) <= 3):
+			#print("!!!!!!")
+			best_feature = copy.deepcopy(current_set_of_features)
+			best_total_accuracy = best_so_far_accuracy
 		print("On level", i," I added feature ", feature_to_add_at_this_level,"to current set")
 		print("current_set_of_features:", current_set_of_features)
 		print("%%%%%%%%%%%%%%%%%%%%%%%%%")
+	print("FINISHED", best_feature, best_total_accuracy)
 
 
 def main():
 	#df = read_input('super_small.txt')
 	
-	df = read_input('CS205_SMALLtestdata__68.txt')
+	df = read_input('CS205_SMALLtestdata__35.txt')
+	#df = read_input('CS205_BIGtestdata__2.txt')
+	
 
 	df = z_normalize_df(df)
 
-	training(df,[6,9],3)
-	#forward_selection(df, 10)
+	#training(df,[6,9],3)
+	forward_selection(df, len(col_names)-1)
 
 main()
 
@@ -171,6 +177,8 @@ main()
 
 
 '''
+small 35 = 6,3,2
+large 2 = 1,3,24
 f1
 0.85
 f2
