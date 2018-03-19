@@ -197,62 +197,50 @@ def forward_selection(data, num_features):
 	print("Finished search!!! The best feature subset is ", best_feature, "which has an accuracy of", best_total_accuracy*100, "%")
 
 def backwards_selection(data, num_features):
-	total_results = []
-	total_runs = 3
-	run_diff = 0.01
-	for l in range(0,total_runs):
-		current_set_of_features = []
-		best_feature = []
-		best_total_accuracy = 0 
-		removed_features = []
-		for k in range(1,num_features):
-			#print(k)
-			current_set_of_features.append(k)
+
+	current_set_of_features = []
+	best_feature = []
+	best_total_accuracy = 0 
+	removed_features = []
+	found_all = 0
+
+	for k in range(1,num_features):
+		current_set_of_features.append(k)
 
 
-		# loop through the features
-		for i in range(1,num_features):
-			print ("On level ",i, " of the search tree")
-			print("current_set_of_features:", current_set_of_features, len(current_set_of_features))
-			best_so_far_accuracy = 0
-			#current_set_of_features = []
-			
-			#best_so_far_accuracy = 0
-			for j in range(1,num_features):
-				features_to_test = copy.deepcopy(current_set_of_features)
-				if j in current_set_of_features:
-					print ("Considering removing the ",j, " feature")
-					features_to_test.remove(j)
-					accuracy = leave_one_out_cross_validation(data, features_to_test,0) # RANDOM input for now cause it don't matter
-					print("accuracy", accuracy, "best_so_far_accuracy", best_so_far_accuracy)
-					if (accuracy >= best_so_far_accuracy) or (accuracy >= best_so_far_accuracy-(run_diff*l)):
-						print("accuracy < best_so_far_accuracy")
-						best_so_far_accuracy = accuracy
-						feature_to_remove = j
-						best_total_accuracy = best_so_far_accuracy
-					#feature_to_add_at_this_level.append(j)
+	# loop through the features
+	for i in range(1,num_features):
+		print ("On level ",i, " of the search tree")
+		best_so_far_accuracy = 0
 
-			print("before", current_set_of_features)
-			#if feature_to_remove in current_set_of_features:
-			#print("feature_to_add_at_this_level",feature_to_add_at_this_level)
-			current_set_of_features.remove(feature_to_remove)
-			#current_set_of_features = feature_to_add_at_this_level
-			print("removed", feature_to_remove)
-			print("after", current_set_of_features)
+		for j in range(1,num_features):
+			features_to_test = copy.deepcopy(current_set_of_features)
+			if j in current_set_of_features:
+				#print ("Considering removing the ",j, " feature")
+				features_to_test.remove(j)
+				accuracy = leave_one_out_cross_validation(data, features_to_test,0) # RANDOM input for now cause it don't matter
+				print("Using feature(s)",features_to_test, "accuracy is", accuracy*100, "%")
+				if (accuracy >= best_so_far_accuracy):
+					#print("accuracy < best_so_far_accuracy")
+					best_so_far_accuracy = accuracy
+					feature_to_remove = j
+				#feature_to_add_at_this_level.append(j)
+		if accuracy >= best_so_far_accuracy and (j > 1):
+			if found_all == 0:
+				print("Warning, accuracy has decreased! Continuing search in case of local maxima")
+			found_all = 1
 
-			if (len(current_set_of_features) <= 3):
-				#print("!!!!!!")
-				best_feature = copy.deepcopy(current_set_of_features)
-				break
-				#best_total_accuracy = best_so_far_accuracy
-			#print("On level", i," I added feature ", feature_to_add_at_this_level,"to current set")
-			#print("current_set_of_features:", current_set_of_features)
-			print("accuracy",best_total_accuracy)
-			print("%%%%%%%%%%%%%%%%%%%%%%%%%")
-		print("FINISHED", best_feature, best_total_accuracy)
-		total_results.append(best_feature)
-	#print()	
-	print("FINISHED", total_results)
+		current_set_of_features.remove(feature_to_remove)
+		print("Features set", current_set_of_features, "was best, accuracy is", best_so_far_accuracy*100, "%")
+
+
+		if not found_all:
+			best_feature = copy.deepcopy(current_set_of_features)
+			best_total_accuracy = best_so_far_accuracy
+
+		print("\n")
+	print("Finished search!!! The best feature subset is ", best_feature, "which has an accuracy of", best_total_accuracy*100, "%")
+
 
 def jasmine_search_algorithm(data, num_features):
 
@@ -345,6 +333,7 @@ def find_default(df, features_total):
 
 def main():
 
+
 	print("Welcome to Jasmine's Feature Selection Algorithm\n")
 
 	# FOR DEBUGGING REASONS THIS IS COMMENTED OUT
@@ -371,7 +360,7 @@ def main():
 	find_default(df, features_total)
 
 	accuracy_percentage = accuracy*100
-	print("Running nearest neighbor with all ", features_total, "features, using 'leaving-one-out' evaluation, I get an accuracy of ", accuracy_percentage, "%")
+	print("Running nearest neighbor with all ", features_total-1, "features, using 'leaving-one-out' evaluation, I get an accuracy of ", accuracy_percentage, "%")
 
 	print("Beginning search.")
 
