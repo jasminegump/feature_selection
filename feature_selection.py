@@ -8,6 +8,7 @@ import sys
 import random
 import copy
 
+#data mining text book
 # https://machinelearningmastery.com/tutorial-to-implement-k-nearest-neighbors-in-python-from-scratch/
 
 #col_names = ['c','f1','f2','f3','f4','f5','f6','f7','f8','f9','f10', 'f11','f12','f13','f14','f15','f16','f17','f18','f19','f20','f21','f22','f23','f24','f25','f26','f27','f28','f29','f30','f31','f32','f33','f34','f35','f36','f37','f38','f39','f40','f41','f42','f43','f44','f45','f46','f47','f48','f49','f50']
@@ -40,13 +41,15 @@ def calc_accuracy(num_pass, num_fail):
 
 def euclidean_distance(x1, x2):
 	total = 0
+	#print(x1,x2)
 	for i in range(len(x1)):
+		print(x1,x2,x1[i],x2[i])
 		total += (x1[i]-x2[i])**2
 	return math.sqrt(total)
 
 def get_neighbors(train_set, test):
 	distance = []
-
+	#print(test)
 	# because first column is class
 	for i in range(len(train_set)):
 		x1 = []
@@ -58,9 +61,23 @@ def get_neighbors(train_set, test):
 		#print("x1",x1)
 		#print("x2",x2)
 		dist = euclidean_distance(x1,x2)
+
 		distance.append(dist)
 	idx = np.argmin(distance)
 	return train_set[idx]
+
+def new_min_max_normalize_df(df):
+	new_min = 0
+	new_max = 1
+
+	for i in df:
+		if i is not 'c':
+			#print(df[i], df[i].mean(), df[i].std())
+			temp = (df[i] - df[i].min())/(df[i].max()-df[i].min())*(new_max-new_min) + new_min
+			df[i] = temp
+			#print(df[i].sum())
+	#print(df)
+	return df
 
 def z_normalize_df(df):
 	#https://stackoverflow.com/questions/24761998/pandas-compute-z-score-for-all-columns
@@ -123,7 +140,7 @@ def training(df, current_set,feature_to_add):
 		temp[i] = [1.0]
 		for j in range(len(col_list)-1):
 			temp[i].append(sys.maxsize)
-
+		#print(temp,test)
 		neighbors = get_neighbors(temp,test)
 		#print(neighbors, test)
 		if test[0] == neighbors[0]:
@@ -144,7 +161,6 @@ def leave_one_out_cross_validation(data, current_set, feature_to_add):
 	return accuracy
 
 def forward_selection(data, num_features):
-
 	current_set_of_features = []
 	best_feature = []
 	best_total_accuracy = 0 
@@ -158,7 +174,7 @@ def forward_selection(data, num_features):
 				print ("Considering adding the ",j, " feature")
 				accuracy = leave_one_out_cross_validation(data, current_set_of_features,j) # RANDOM input for now cause it don't matter
 				print("accuracy", accuracy, "best_so_far_accuracy", best_so_far_accuracy)
-				if accuracy > best_so_far_accuracy:
+				if (accuracy > best_so_far_accuracy):
 					print("accuracy > best_so_far_accuracy")
 					best_so_far_accuracy = accuracy
 					if feature_to_add_at_this_level:
@@ -173,7 +189,6 @@ def forward_selection(data, num_features):
 		print("current_set_of_features:", current_set_of_features)
 		print("%%%%%%%%%%%%%%%%%%%%%%%%%")
 	print("FINISHED", best_feature, best_total_accuracy)
-
 
 def backwards_selection(data, num_features):
 	total_results = []
@@ -233,20 +248,127 @@ def backwards_selection(data, num_features):
 	#print()	
 	print("FINISHED", total_results)
 
+def third_algorithm(data, num_features):
+
+	total_results = []
+	total_runs = 3
+	run_diff = 0.02
+	orig_data = copy.deepcopy(data)
+
+	for l in range(0,total_runs):
+		data = orig_data
+
+		print("LOOP:", l)
+
+		#delete random 5% of data
+		# resample 5%
+		resample = int(len(data)/100*5)
+		#print(len(data))
+		for m in range(0,resample):
+			temp_rand = random.randint(0,len(data)-1)
+			print(temp_rand)
+			#https://chrisalbon.com/python/data_wrangling/pandas_dropping_column_and_rows/
+			data = data.drop(data.index[temp_rand])
+		#print(len(data))
+
+		current_set_of_features = []
+		best_feature = []
+		best_total_accuracy = 0
+
+		# loop through the features
+
+		for i in range(1,num_features+1):
+			print ("On level ",i, " of the search tree")
+			best_so_far_accuracy = 0
+			feature_to_add_at_this_level = []
+			for j in range(1,num_features+1):
+				if j not in current_set_of_features:
+					print ("Considering adding the ",j, " feature")
+					accuracy = leave_one_out_cross_validation(data, current_set_of_features,j) # RANDOM input for now cause it don't matter
+					print("accuracy", accuracy, "best_so_far_accuracy", best_so_far_accuracy)
+					if (accuracy >= best_so_far_accuracy):
+						print("accuracy > best_so_far_accuracy")
+						best_so_far_accuracy = accuracy
+						if feature_to_add_at_this_level:
+							feature_to_add_at_this_level = []
+						feature_to_add_at_this_level.append(j)
+			current_set_of_features += feature_to_add_at_this_level
+			if (best_so_far_accuracy > best_total_accuracy) and (len(current_set_of_features) <= 3):
+				#print("!!!!!!")
+				best_feature = copy.deepcopy(current_set_of_features)
+				best_total_accuracy = best_so_far_accuracy
+			print("On level", i," I added feature ", feature_to_add_at_this_level,"to current set")
+			print("current_set_of_features:", current_set_of_features)
+			print("%%%%%%%%%%%%%%%%%%%%%%%%%")
+		print("FINISHED", best_feature, best_total_accuracy)
+
+		total_results.append(best_feature)
+	#print()	
+	print("FINISHED", total_results)
+
+	return total_results
+
+def find_strong_feature(feature_list):
+	count = 0
+	strong_features = dict()
+	features_output = []
+	for i in range(len(feature_list)):
+		for j in range(len(feature_list[i])):
+			if feature_list[i][j] in strong_features:
+				strong_features[feature_list[i][j]] = strong_features[feature_list[i][j]] + 1
+			else:
+				strong_features[feature_list[i][j]] = 1
+	print (strong_features)
+	
+	#https://stackoverflow.com/questions/26871866/print-highest-value-in-dict-with-key
+	max_key = max(strong_features, key=strong_features.get)  # Just use 'min' instead of 'max' for minimum.
+	features_output.append(max_key)
+	max_key = strong_features.pop(max_key)
+	#print(max_key, strong_features[max_key])
+	max_key = max(strong_features, key=strong_features.get)  # Just use 'min' instead of 'max' for minimum.
+	features_output.append(max_key)
+
+	return features_output
+
 def main():
 	#df = read_input('super_small.txt')
-	
+	features = []
 	df = read_input('CS205_SMALLtestdata__35.txt')
 	#df = read_input('CS205_BIGtestdata__2.txt')
 
 	#df = scaling_normalize_df(df)
-	#df = min_max_normalize_df(df)
+	#df = new_min_max_normalize_df(df)
 	df = z_normalize_df(df)
 
-	#training(df,[5,6,8],10)
+	training(df,[5,6,8],10)
 
 	#forward_selection(df, len(col_names)-1)
-	backwards_selection(df, len(col_names)-1)
+	#backwards_selection(df, len(col_names)-1)
+
+
+
+
+
+	'''
+	results = third_algorithm(df, len(col_names)-1)
+	
+	strong_features = find_strong_feature(results)
+	#features = features + strong_features
+	print("strong_features", strong_features)
+	for i in strong_features:
+		#https://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.drop.html
+		temp = col_names[i]
+		df = df.drop([temp], axis=1)
+		col_names.remove(temp)
+		features.append(temp)
+		#print(df)
+	print(df)
+	results  = third_algorithm(df, len(col_names)-1)
+	strong_features = find_strong_feature(results)
+	features.append(col_names[strong_features[0]])
+	print("FINAL RESULTS:", features, strong_features[0])
+	print(df)
+	'''
 
 main()
 '''
