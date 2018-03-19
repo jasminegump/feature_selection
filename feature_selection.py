@@ -7,6 +7,7 @@ import copy
 import sys
 import random
 import copy
+import time
 
 #data mining text book
 # https://machinelearningmastery.com/tutorial-to-implement-k-nearest-neighbors-in-python-from-scratch/
@@ -177,14 +178,14 @@ def forward_selection(data, num_features):
 			if j not in current_set_of_features:
 				accuracy = leave_one_out_cross_validation(data, current_set_of_features,j)
 				test_set = current_set_of_features + [j]
-				print("Using feature(s)",test_set, "accuracy is", accuracy)
+				print("Using feature(s)",test_set, "accuracy is", accuracy*100, "%")
 				if (accuracy > best_so_far_accuracy):
 					best_so_far_accuracy = accuracy
 					if feature_to_add_at_this_level:
 						feature_to_add_at_this_level = []
 					feature_to_add_at_this_level.append(j)
 		current_set_of_features += feature_to_add_at_this_level
-		print("Features set", current_set_of_features, "was best, accuarcy is", best_so_far_accuracy*100, "%")
+		print("Features set", current_set_of_features, "was best, accuracy is", best_so_far_accuracy*100, "%")
 		if best_so_far_accuracy <= best_total_accuracy:
 			if found_all == 0:
 				print("Warning, accuracy has decreased! Continuing search in case of local maxima")
@@ -193,7 +194,7 @@ def forward_selection(data, num_features):
 			best_feature = copy.deepcopy(current_set_of_features)
 			best_total_accuracy = best_so_far_accuracy
 		print("\n")
-	print("Finished search!!! The best feature subset is ", best_feature, "which has an accuracy of", best_total_accuracy*100)
+	print("Finished search!!! The best feature subset is ", best_feature, "which has an accuracy of", best_total_accuracy*100, "%")
 
 def backwards_selection(data, num_features):
 	total_results = []
@@ -347,8 +348,8 @@ def main():
 	print("Welcome to Jasmine's Feature Selection Algorithm\n")
 
 	# FOR DEBUGGING REASONS THIS IS COMMENTED OUT
-	#text_file = input("Type in the name of the file to test:")
-	text_file = 'CS205_SMALLtestdata__35.txt'
+	text_file = input("Type in the name of the file to test:")
+	#text_file = 'CS205_SMALLtestdata__35.txt'
 	#text_file = 'CS205_BIGtestdata__2.txt'
 
 	df,features_total = read_input(text_file)
@@ -358,6 +359,8 @@ def main():
 	print("2. Backward Elimination")
 	print("3. Jasmine's Search Algorithm")
 	algorithm = int(input())
+
+	start = time.time()
 
 	features = []
 
@@ -380,6 +383,9 @@ def main():
 		jasmine_search_algorithm(df, features_total)
 	else:
 		print("Invalid")
+
+	end = time.time()
+	print("Time lapsed (seconds): ", end-start)
 
 
 	#print(features_total)
