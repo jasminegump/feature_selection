@@ -167,6 +167,7 @@ def forward_selection(data, num_features):
 	current_set_of_features = []
 	best_feature = []
 	best_total_accuracy = 0 
+	found_all = 0
 	# loop through the features
 	for i in range(1,num_features):
 		print ("On level ",i, " of the search tree")
@@ -174,24 +175,25 @@ def forward_selection(data, num_features):
 		feature_to_add_at_this_level = []
 		for j in range(1,num_features):
 			if j not in current_set_of_features:
-				print ("Considering adding the ",j, " feature")
-				accuracy = leave_one_out_cross_validation(data, current_set_of_features,j) # RANDOM input for now cause it don't matter
-				print("accuracy", accuracy, "best_so_far_accuracy", best_so_far_accuracy)
+				accuracy = leave_one_out_cross_validation(data, current_set_of_features,j)
+				test_set = current_set_of_features + [j]
+				print("Using feature(s)",test_set, "accuracy is", accuracy)
 				if (accuracy > best_so_far_accuracy):
-					print("accuracy > best_so_far_accuracy")
 					best_so_far_accuracy = accuracy
 					if feature_to_add_at_this_level:
 						feature_to_add_at_this_level = []
 					feature_to_add_at_this_level.append(j)
 		current_set_of_features += feature_to_add_at_this_level
-		if (best_so_far_accuracy > best_total_accuracy) or (len(current_set_of_features) <= 3):
-			#print("!!!!!!")
+		print("Features set", current_set_of_features, "was best, accuarcy is", best_so_far_accuracy*100, "%")
+		if best_so_far_accuracy <= best_total_accuracy:
+			if found_all == 0:
+				print("Warning, accuracy has decreased! Continuing search in case of local maxima")
+			found_all = 1
+		if (best_so_far_accuracy > best_total_accuracy) and not found_all:
 			best_feature = copy.deepcopy(current_set_of_features)
 			best_total_accuracy = best_so_far_accuracy
-		print("On level", i," I added feature ", feature_to_add_at_this_level,"to current set")
-		print("current_set_of_features:", current_set_of_features)
-		print("%%%%%%%%%%%%%%%%%%%%%%%%%")
-	print("FINISHED", best_feature, best_total_accuracy)
+		print("\n")
+	print("Finished search!!! The best feature subset is ", best_feature, "which has an accuracy of", best_total_accuracy*100)
 
 def backwards_selection(data, num_features):
 	total_results = []
@@ -368,6 +370,7 @@ def main():
 	accuracy_percentage = accuracy*100
 	print("Running nearest neighbor with all ", features_total, "features, using 'leaving-one-out' evaluation, I get an accuracy of ", accuracy_percentage, "%")
 
+	print("Beginning search.")
 
 	if algorithm == 1:
 		forward_selection(df, features_total)
