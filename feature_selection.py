@@ -11,9 +11,7 @@ import copy
 #data mining text book
 # https://machinelearningmastery.com/tutorial-to-implement-k-nearest-neighbors-in-python-from-scratch/
 
-#col_names = ['c','f1','f2','f3','f4','f5','f6','f7','f8','f9','f10', 'f11','f12','f13','f14','f15','f16','f17','f18','f19','f20','f21','f22','f23','f24','f25','f26','f27','f28','f29','f30','f31','f32','f33','f34','f35','f36','f37','f38','f39','f40','f41','f42','f43','f44','f45','f46','f47','f48','f49','f50']
-col_names = ['c','f1','f2','f3','f4','f5','f6','f7','f8','f9','f10']
-#col_names = ['c','f1','f2','f3']
+col_names = ['c','f1','f2','f3','f4','f5','f6','f7','f8','f9','f10', 'f11','f12','f13','f14','f15','f16','f17','f18','f19','f20','f21','f22','f23','f24','f25','f26','f27','f28','f29','f30','f31','f32','f33','f34','f35','f36','f37','f38','f39','f40','f41','f42','f43','f44','f45','f46','f47','f48','f49','f50']
 
 def read_file(text_file):
 	data = []
@@ -27,13 +25,17 @@ def read_file(text_file):
 
 def read_input(text_file):
 	input_list = read_file(text_file)
-	df = list_to_pandas(input_list)
-	return df
+	df, features_total = list_to_pandas(input_list)
+	return df, features_total
 
 def list_to_pandas(input_list):
-	df = pd.DataFrame(input_list, columns=col_names)
-	#df = pd.DataFrame(input_list, columns=['c','f1','f2','f3'])
-	return df
+	# get variable number of columns
+	#print(len(input_list[0]))
+	feature_total = len(input_list[0])
+	data_total = len(input_list)
+	print("This dataset has ", feature_total - 1, "features (not including the class attribute) with ", data_total," instances.\n")
+	df = pd.DataFrame(input_list, columns=col_names[:feature_total])
+	return df, feature_total
 
 # need to normalize between -10 and 10
 def calc_accuracy(num_pass, num_fail):
@@ -43,7 +45,7 @@ def euclidean_distance(x1, x2):
 	total = 0
 	#print(x1,x2)
 	for i in range(len(x1)):
-		print(x1,x2,x1[i],x2[i])
+		#print(x1,x2,x1[i],x2[i])
 		total += (x1[i]-x2[i])**2
 	return math.sqrt(total)
 
@@ -88,6 +90,7 @@ def z_normalize_df(df):
 			df[i] = temp
 			#print(df[i].sum())
 	#print(df)
+	print("Please wait while I normalize the data... Done!\n")
 	return df
 
 def min_max_normalize_df(df):
@@ -121,7 +124,7 @@ def training(df, current_set,feature_to_add):
 		list_of_features = [0]+current_set+[feature_to_add]
 	col_list = [col_names[i] for i in list_of_features]
 
-	print("training:",col_list)
+	#print("training:",col_list)
 
 	# first create training data set with current set and feature to add
 	#https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
@@ -148,7 +151,7 @@ def training(df, current_set,feature_to_add):
 		else:
 			num_fail +=1
 	accuracy = calc_accuracy(num_pass, num_fail)
-	print(accuracy)
+	#print(accuracy)
 	return accuracy
 
 # Current divorcing of cross validation
@@ -165,11 +168,11 @@ def forward_selection(data, num_features):
 	best_feature = []
 	best_total_accuracy = 0 
 	# loop through the features
-	for i in range(1,num_features+1):
+	for i in range(1,num_features):
 		print ("On level ",i, " of the search tree")
 		best_so_far_accuracy = 0
 		feature_to_add_at_this_level = []
-		for j in range(1,num_features+1):
+		for j in range(1,num_features):
 			if j not in current_set_of_features:
 				print ("Considering adding the ",j, " feature")
 				accuracy = leave_one_out_cross_validation(data, current_set_of_features,j) # RANDOM input for now cause it don't matter
@@ -199,20 +202,20 @@ def backwards_selection(data, num_features):
 		best_feature = []
 		best_total_accuracy = 0 
 		removed_features = []
-		for k in range(1,num_features+1):
+		for k in range(1,num_features):
 			#print(k)
 			current_set_of_features.append(k)
 
 
 		# loop through the features
-		for i in range(1,num_features+1):
+		for i in range(1,num_features):
 			print ("On level ",i, " of the search tree")
 			print("current_set_of_features:", current_set_of_features, len(current_set_of_features))
 			best_so_far_accuracy = 0
 			#current_set_of_features = []
 			
 			#best_so_far_accuracy = 0
-			for j in range(1,num_features+1):
+			for j in range(1,num_features):
 				features_to_test = copy.deepcopy(current_set_of_features)
 				if j in current_set_of_features:
 					print ("Considering removing the ",j, " feature")
@@ -248,7 +251,7 @@ def backwards_selection(data, num_features):
 	#print()	
 	print("FINISHED", total_results)
 
-def third_algorithm(data, num_features):
+def jasmine_search_algorithm(data, num_features):
 
 	total_results = []
 	total_runs = 3
@@ -330,23 +333,62 @@ def find_strong_feature(feature_list):
 
 	return features_output
 
-def main():
-	#df = read_input('super_small.txt')
-	features = []
-	df = read_input('CS205_SMALLtestdata__35.txt')
-	#df = read_input('CS205_BIGtestdata__2.txt')
 
-	#df = scaling_normalize_df(df)
-	#df = new_min_max_normalize_df(df)
+def find_default(df, features_total):
+	current_set = []
+	current_set = [i for i in range(1,features_total)]
+	accuracy = training(df, current_set,0)
+	return accuracy
+
+def main():
+
+	print("Welcome to Jasmine's Feature Selection Algorithm\n")
+
+	# FOR DEBUGGING REASONS THIS IS COMMENTED OUT
+	#text_file = input("Type in the name of the file to test:")
+	text_file = 'CS205_SMALLtestdata__35.txt'
+	#text_file = 'CS205_BIGtestdata__2.txt'
+
+	df,features_total = read_input(text_file)
+
+	print("Type the number of the algorithm you want to run")
+	print("1. Forward Selection")
+	print("2. Backward Elimination")
+	print("3. Jasmine's Search Algorithm")
+	algorithm = int(input())
+
+	features = []
+
+	accuracy = find_default(df, features_total)
+
 	df = z_normalize_df(df)
 
-	training(df,[5,6,8],10)
+	find_default(df, features_total)
+
+	accuracy_percentage = accuracy*100
+	print("Running nearest neighbor with all ", features_total, "features, using 'leaving-one-out' evaluation, I get an accuracy of ", accuracy_percentage, "%")
+
+
+	if algorithm == 1:
+		forward_selection(df, features_total)
+	elif algorithm == 2:
+		backwards_selection(df, features_total)
+	elif algorithm == 3:
+		jasmine_search_algorithm(df, features_total)
+	else:
+		print("Invalid")
+
+
+	#print(features_total)
+	#print(df)
+
+	#print(features_total)
+	#print(df)
+
+	#training(df,[5,6,8],10)
 
 	#forward_selection(df, len(col_names)-1)
 	#backwards_selection(df, len(col_names)-1)
-
-
-
 
 
 	'''
